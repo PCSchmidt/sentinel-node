@@ -73,3 +73,15 @@ def save_results(path: str | Path, results: list[DetectorResult], meta: dict | N
 def load_results(path: str | Path) -> tuple[list[DetectorResult], dict]:
     payload = json.loads(Path(path).read_text(encoding="utf-8"))
     return [DetectorResult(**r) for r in payload["results"]], payload.get("meta", {})
+
+
+def mean_std(values: list[float]) -> tuple[float, float]:
+    """Mean and sample standard deviation (n-1); the std is 0.0 for a single value."""
+    if not values:
+        raise ValueError("no values")
+    n = len(values)
+    mean = sum(values) / n
+    if n == 1:
+        return mean, 0.0
+    var = sum((v - mean) ** 2 for v in values) / (n - 1)
+    return mean, var**0.5

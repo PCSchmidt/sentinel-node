@@ -8,28 +8,28 @@
     "imgsz": 640,
     "weights": "C:\\Dev\\AIEdgePhysicalProjects\\sentinel-node\\experiments\\detector\\out\\runs\\visdrone\\weights\\best.pt",
     "int8_calibration": "Ultralytics EngineCalibrator, TensorRT MinMax; images from calib.yaml (held-out training sample)",
-    "latency": "median of 300 single-image predictions after 30 warm-up runs, model inference only, batch 1"
+    "latency": "median over 5 interleaved rounds (each the median of 300 single-image predictions after 30 warm-up runs), model inference only, batch 1, run after the first-pass numbers proved unreliable; see latency_repeat.json and results_first_pass.json"
   },
   "results": [
     {
       "name": "PyTorch FP32",
       "map50": 0.28983799965000745,
       "map50_95": 0.16173661394605698,
-      "latency_ms": 6.824799987953156,
+      "latency_ms": 6.590549994143657,
       "size_mb": 5.232629776000977
     },
     {
       "name": "TensorRT FP16",
       "map50": 0.28955766388583465,
       "map50_95": 0.1622469757884388,
-      "latency_ms": 1.0453499853610992,
+      "latency_ms": 1.1232500110054389,
       "size_mb": 8.111185073852539
     },
     {
       "name": "TensorRT INT8",
       "map50": 0.27835844086273337,
       "map50_95": 0.15248695945826665,
-      "latency_ms": 1.51859998004511,
+      "latency_ms": 1.0681499989004806,
       "size_mb": 4.910457611083984
     }
   ]

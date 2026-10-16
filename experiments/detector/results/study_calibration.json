@@ -1,0 +1,56 @@
+{
+  "meta": {
+    "gpu": "NVIDIA RTX A4500 Laptop GPU",
+    "torch": "2.11.0+cu128",
+    "tensorrt": "10.16.1.11",
+    "ultralytics": "8.4.178",
+    "imgsz": 640,
+    "weights": "C:\\Dev\\AIEdgePhysicalProjects\\sentinel-node\\experiments\\detector\\out\\runs\\visdrone\\weights\\best.pt",
+    "latency": "median of 300 single-image predictions after 30 warm-up runs, model inference only, batch 1",
+    "dataset": "C:\\Dev\\AIEdgePhysicalProjects\\sentinel-node\\experiments\\detector\\out\\visdrone_local.yaml"
+  },
+  "results": [
+    {
+      "name": "INT8 minmax calib-seed 0",
+      "map50": 0.27984999039279873,
+      "map50_95": 0.1539305668593055,
+      "latency_ms": 0.9880000143311918,
+      "size_mb": 5.044727325439453
+    },
+    {
+      "name": "INT8 minmax calib-seed 1",
+      "map50": 0.27831176487712883,
+      "map50_95": 0.15341640263320946,
+      "latency_ms": 0.8565000025555491,
+      "size_mb": 4.8609724044799805
+    },
+    {
+      "name": "INT8 minmax calib-seed 2",
+      "map50": 0.27745613875375386,
+      "map50_95": 0.1542393722739056,
+      "latency_ms": 0.887950009200722,
+      "size_mb": 4.949496269226074
+    },
+    {
+      "name": "INT8 entropy calib-seed 0",
+      "map50": 0.221590811968448,
+      "map50_95": 0.11984731611564334,
+      "latency_ms": 0.8488000021316111,
+      "size_mb": 4.880077362060547
+    },
+    {
+      "name": "INT8 entropy calib-seed 1",
+      "map50": 0.2539447343489428,
+      "map50_95": 0.13870454135331836,
+      "latency_ms": 0.8641500025987625,
+      "size_mb": 4.977541923522949
+    },
+    {
+      "name": "INT8 entropy calib-seed 2",
+      "map50": 0.25020660819367263,
+      "map50_95": 0.13782947437133342,
+      "latency_ms": 0.8839000074658543,
+      "size_mb": 4.667193412780762
+    }
+  ]
+}

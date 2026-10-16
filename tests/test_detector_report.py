@@ -53,3 +53,12 @@ def test_round_trip_json(tmp_path):
     results, meta = load_results(path)
     assert results == [FP32, INT8]
     assert meta == {"gpu": "test"}
+
+
+def test_mean_std():
+    from sentinel_node.detector_report import mean_std
+
+    assert mean_std([2.0, 4.0, 6.0]) == pytest.approx((4.0, 2.0))
+    assert mean_std([5.0]) == (5.0, 0.0)
+    with pytest.raises(ValueError):
+        mean_std([])

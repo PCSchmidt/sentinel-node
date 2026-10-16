@@ -27,13 +27,13 @@ The `Synthetic*` classes and the nearest-neighbour tracker exist only to exercis
 
 YOLO11n fine-tuned on VisDrone (aerial people and vehicles), 640 px, evaluated on the VisDrone validation split with INT8 calibrated on 512 held-out training images. RTX A4500 Laptop GPU, TensorRT 10.16.
 
-| Precision | mAP50-95 | Δ vs. FP32 | Latency (ms/img) | Size (MB) |
+| Precision | mAP50-95 | Δ vs. FP32 | Latency, batch 1 (ms/img) | Size (MB) |
 | --- | --- | --- | --- | --- |
-| PyTorch FP32 | 0.162 | baseline | 6.82 | 5.2 |
-| TensorRT FP16 | 0.162 | +0.05 pts | 1.05 | 8.1 |
-| TensorRT INT8 | 0.152 | -0.92 pts (-5.7%) | 1.52 | 4.9 |
+| PyTorch FP32 | 0.162 | baseline | 6.59 | 5.2 |
+| TensorRT FP16 | 0.162 | +0.05 pts | 1.12 | 8.1 |
+| TensorRT INT8 (MinMax) | 0.152 | -0.92 pts (-5.7%) | 1.07 | 4.9 |
 
-FP16 cost nothing in accuracy. INT8 lost about a point of mAP and, on this model and GPU, was slower than FP16, so it should not be assumed to be the fast path on the Jetson. Single run; these are not Jetson numbers. Method, caveats and reproduction steps are in [experiments/detector](experiments/detector/README.md).
+FP16 cost nothing in accuracy. MinMax INT8 lost about 0.8-0.9 points of mAP50-95 (stable across three calibration samples) and ran about 8% faster than FP16 at batch 1 and about 27% faster at batch 8; entropy calibration lost about 3 points. An earlier version of this page said INT8 was slower than FP16; that came from a single outlier latency reading and did not reproduce (details and correction in the experiment README). Latency on this throttling laptop GPU drifts, so engines are compared within the same measurement round. Not Jetson numbers; two more training seeds are still running. See [experiments/detector](experiments/detector/README.md).
 
 ## Planned measurements (not yet done)
 

@@ -2,7 +2,7 @@
 
 How much accuracy does quantisation cost a small aerial detector, and how much latency does it buy? This runs on a desktop NVIDIA GPU, so it needs no Jetson. It measures the **accuracy** cost of INT8, which indicates what to expect on the Jetson but does not guarantee it: the engines are rebuilt there with a different TensorRT version and may quantise differently. It does not measure Jetson latency or power (milestone 0.4).
 
-**Status: first results in** (single run, seed 0). See Results below; they are from a desktop GPU and are not Jetson numbers.
+**Status: results for the seed-0 model, calibration study and latency re-measurement are in; two extra training seeds are still running.** Everything is from a desktop GPU and is not a Jetson number. An earlier version of this page reported INT8 as slower than FP16; that was wrong, see the correction below.
 
 ## Method
 
@@ -30,26 +30,61 @@ TensorRT 11 removed the classic INT8 calibrator, so Ultralytics routes it throug
 
 ## Results
 
-Fine-tuned YOLO11n on VisDrone, 30 epochs (final training-time validation: mAP50 0.299, mAP50-95 0.165). The table below uses `evaluate.py`'s settings (batch 1, full-precision validator), which score slightly lower than the training-time validation; the same settings are used for every row. RTX A4500 Laptop GPU, TensorRT 10.16, PyTorch 2.11 (CUDA 12.8). Raw files are in [results/](results/).
+Fine-tuned YOLO11n on VisDrone, 30 epochs (final training-time validation: mAP50 0.299, mAP50-95 0.165). The table uses `evaluate.py`'s settings (batch 1, full-precision validator), which score slightly lower than the training-time validation; the same settings apply to every row. RTX A4500 Laptop GPU, TensorRT 10.16, PyTorch 2.11 (CUDA 12.8). Raw files are in [results/](results/).
 
 | Precision | mAP50 | mAP50-95 | Δ mAP50-95 vs. baseline | Latency (ms/img) | Speedup | Size (MB) |
 | --- | --- | --- | --- | --- | --- | --- |
-| PyTorch FP32 | 0.290 | 0.162 | baseline | 6.82 | 1.00x | 5.2 |
-| TensorRT FP16 | 0.290 | 0.162 | +0.05 pts (+0.3%) | 1.05 | 6.53x | 8.1 |
-| TensorRT INT8 | 0.278 | 0.152 | -0.92 pts (-5.7%) | 1.52 | 4.49x | 4.9 |
+| PyTorch FP32 | 0.290 | 0.162 | baseline | 6.59 | 1.00x | 5.2 |
+| TensorRT FP16 | 0.290 | 0.162 | +0.05 pts (+0.3%) | 1.12 | 5.87x | 8.1 |
+| TensorRT INT8 (MinMax) | 0.278 | 0.152 | -0.92 pts (-5.7%) | 1.07 | 6.17x | 4.9 |
 
-What this shows:
+Latency is the median of 5 interleaved rounds (see below). The FP32-to-TensorRT gap partly reflects eager PyTorch overhead on a tiny model, not precision alone, so read the FP16-vs-INT8 comparison, not the FP32 one, for the effect of quantisation.
 
-- **FP16 is free here.** Same accuracy to within noise (+0.05 points) and 6.5x lower latency than PyTorch. Part of that gap is TensorRT versus eager PyTorch overhead on a small model, not purely precision, so it overstates what FP16 alone buys.
-- **INT8 cost accuracy and did not buy speed.** mAP50-95 fell 0.92 points (5.7% relative), and INT8 was *slower* than FP16 (1.52 ms vs 1.05 ms). Its only advantage on this setup is a smaller file (4.9 MB vs 8.1 MB for the FP16 engine).
-- **I have not profiled why INT8 is slower.** Plausible causes, untested: a very small model at batch 1 is limited by kernel launch and memory traffic rather than arithmetic; the mixed-precision graph (head kept in higher precision) adds quantise/dequantise steps; and the INT8 kernels may not be selected on this GPU for these layer shapes.
-- **Implication for the Jetson:** do not assume INT8 is the fast path. The Jetson milestone should measure FP16 and INT8 on the device, with power, and report whichever wins on joules per frame.
+### Correction: INT8 is not slower than FP16
+
+The first run measured INT8 at 1.52 ms and FP16 at 1.05 ms, and this page said INT8 was slower. That did not reproduce. Re-measuring the same engines in interleaved rounds, the original INT8 engine ran at 0.92-1.14 ms and FP16 at 1.05-1.33 ms, with INT8 faster than FP16 in every round. The 1.52 ms reading was an outlier of unknown cause. The GPU throttles during a run (SM clock fell from 1785 to 1305 MHz as it heated), which makes absolute latency drift upward by about 15% together for all engines, but I have not shown that throttling explains the outlier. The first-pass numbers are kept in `results/results_first_pass.json`.
+
+The reliable way to compare engines on this machine is within the same round. Median same-round latency relative to FP16:
+
+| Engine | Batch 1 | Batch 8 |
+| --- | --- | --- |
+| TensorRT FP16 | 1.00 | 1.00 |
+| TensorRT INT8, MinMax calibration | 0.92 (faster in every round) | 0.73 (faster in every round) |
+| TensorRT INT8, Entropy calibration | 0.83 | 0.97 |
+
+At batch 8 the MinMax INT8 engine ran at about 0.53 ms/img against 0.82 ms/img for FP16 (medians; ranges overlap across rounds because of throttling, hence the same-round ratios).
+
+### INT8 calibration: algorithm and sample
+
+Same seed-0 weights; each row is a separate INT8 build calibrated on a different random 512-image sample of the training split. I confirmed in the TensorRT build log that the first three builds used `MinMaxCalibration` and the last three `EntropyCalibration2`. Entropy calibration needed a narrow patch of an Ultralytics internal (`calibration.py`), which is described there.
+
+| INT8 calibration | Calibration sample (seed) | mAP50-95 | Δ vs. FP32 (pts) |
+| --- | --- | --- | --- |
+| MinMax | 0 | 0.1539 | -0.78 |
+| MinMax | 1 | 0.1534 | -0.83 |
+| MinMax | 2 | 0.1542 | -0.75 |
+| Entropy | 0 | 0.1198 | -4.19 |
+| Entropy | 1 | 0.1387 | -2.30 |
+| Entropy | 2 | 0.1378 | -2.39 |
+
+MinMax: mean -0.79 pts, std 0.04 over the three samples. Entropy: mean -2.96 pts, std 1.06. The first MinMax build on calibration sample 0 scored -0.92 pts and a rebuild with the same sample scored -0.78, so TensorRT builds differ by roughly 0.14 points even with identical inputs.
+
+### What this shows
+
+- **FP16 is free here:** same accuracy to within noise.
+- **INT8 with MinMax calibration costs about 0.8-0.9 mAP50-95 points (about 5%)** and is stable across calibration samples; in return it is about 8% faster than FP16 at batch 1 and about 27% faster at batch 8 on this GPU. A modest return at batch 1.
+- **Entropy calibration was worse on this model:** about 3 points lost, with much more variation between calibration samples, and no faster than FP16 at batch 8. I did not investigate why; the measurement is what it is.
+- **The earlier hypothesis that INT8 is launch-bound at batch 1 is not needed:** INT8 is faster, just by little at batch 1, and the gap grows with batch size, which is what a partly launch- or memory-bound small model would show. I have not profiled it.
+- **For the Jetson:** measure FP16 and INT8 on the device with clocks fixed, repeat and interleave the measurements, and decide on joules per frame, not latency alone.
+
+Training-seed results (two more fine-tunes) are running and will be added here.
 
 ## Limitations of these results
 
-- One training run and one calibration sample (512 images, seed 0). The 0.05-point FP16 difference is noise; the 0.92-point INT8 drop is probably real in sign but its size depends on the calibration set and method. MinMax calibration is sensitive to outliers, and a percentile or entropy calibrator may lose less accuracy; that was not tried.
-- Latency is median model-inference time for one image on an RTX A4500 laptop GPU, not the target device, and excludes pre- and post-processing. It was measured on a random-noise image, so postprocessing cost is not represented.
-- Latency came from a laptop GPU that may throttle under load; the 300-run median reduces but does not remove that.
+- One trained model (seed 0) for the calibration and latency studies; the other training seeds are pending. Mean-and-spread figures above are over calibration samples, not over trained models.
+- Latency is from a laptop GPU that throttles. Absolute values drift by about 15% during a run; only same-round comparisons are trusted. Latency is model inference only, on a random-noise image, and is not Jetson latency.
+- The MinMax and Entropy comparison uses Ultralytics' mixed-precision graph (the head's final Sigmoid is kept in higher precision), which is a specific choice. Other calibrators, such as percentile, were not tried because Ultralytics does not expose them for this TensorRT path.
+- Build-to-build variation (about 0.14 points for the same inputs) is of the same order as the differences between the three MinMax samples, so the small differences among those rows should not be read as meaningful.
 
 ## Other limitations
 
