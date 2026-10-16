@@ -5,7 +5,8 @@
 | 0.1 | Harness: CoT encoder, bandwidth governor, stage timers, pipeline driver, CI | No | Done |
 | 0.2 | Validate CoT output in a real ATAK/WinTAK client; add UDP/MQTT publishers | No | Planned |
 | 0.3 | Capture on Jetson: CSI camera via GStreamer/Argus, zero-copy to GPU; capture latency measured | Jetson, camera | Planned |
-| 0.4 | Detector: fine-tune, export ONNX → TensorRT INT8, mAP before/after and latency table at 7/15/25 W | Jetson | Planned |
+| 0.3a | Detector fine-tune and ONNX → TensorRT INT8 accuracy (mAP before/after) on a desktop NVIDIA GPU; no Jetson needed | No (laptop RTX GPU) | Planned |
+| 0.4 | Rebuild engines on the Jetson; latency table and joules per frame at 7/15/25 W | Jetson | Planned |
 | 0.5 | On-node tracker, geo-registered with GPS and a calibrated camera; CoT into ATAK/WinTAK | Jetson, GPS | Planned |
 | 0.6 | Ops layer: systemd services, watchdog, health telemetry, read-only root filesystem, power-state machine | Jetson | Planned |
 | 0.7 | 24-hour soak test; link results at 9.6 kbps, 64 kbps, 1 Mbps | Jetson | Planned |
