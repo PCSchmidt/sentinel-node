@@ -4,7 +4,7 @@
 
 An attritable edge sensor: a low-cost node that detects people, vehicles and small drones, tracks them locally, and publishes **tracks, not video** over a constrained link. Target hardware is a Jetson Orin Nano on a 7-25 W budget.
 
-**Status: scaffold, no device results yet.** The measurement harness, Cursor-on-Target encoding and bandwidth governor are implemented and unit-tested on a laptop. Nothing has run on a Jetson, there is no real detector, camera or GPS yet, and no latency, energy or accuracy numbers exist. See the [roadmap](docs/roadmap.md).
+**Status: scaffold plus a first detector result.** The measurement harness, Cursor-on-Target encoding and bandwidth governor are implemented and unit-tested on a laptop, and a YOLO11n detector has been fine-tuned on VisDrone and compared across FP32, FP16 and INT8 on a desktop GPU (below). Nothing has run on a Jetson, and there is no camera, GPS or on-node tracker yet, so no device latency or energy numbers exist. See the [roadmap](docs/roadmap.md).
 
 Part of [physical-ai-portfolio](https://github.com/PCSchmidt/physical-ai-portfolio). The node tracker is intended to reuse ideas from [FuseTrack](https://github.com/PCSchmidt/fusetrack).
 
@@ -23,10 +23,22 @@ A forward sensor has little power, a thin link and no operator watching video. I
 
 The `Synthetic*` classes and the nearest-neighbour tracker exist only to exercise the harness. Timings from them say nothing about the real node.
 
+## First result: detector precision on a desktop GPU
+
+YOLO11n fine-tuned on VisDrone (aerial people and vehicles), 640 px, evaluated on the VisDrone validation split with INT8 calibrated on 512 held-out training images. RTX A4500 Laptop GPU, TensorRT 10.16.
+
+| Precision | mAP50-95 | Δ vs. FP32 | Latency (ms/img) | Size (MB) |
+| --- | --- | --- | --- | --- |
+| PyTorch FP32 | 0.162 | baseline | 6.82 | 5.2 |
+| TensorRT FP16 | 0.162 | +0.05 pts | 1.05 | 8.1 |
+| TensorRT INT8 | 0.152 | -0.92 pts (-5.7%) | 1.52 | 4.9 |
+
+FP16 cost nothing in accuracy. INT8 lost about a point of mAP and, on this model and GPU, was slower than FP16, so it should not be assumed to be the fast path on the Jetson. Single run; these are not Jetson numbers. Method, caveats and reproduction steps are in [experiments/detector](experiments/detector/README.md).
+
 ## Planned measurements (not yet done)
 
-1. Latency per stage and joules per frame at 7 W, 15 W and 25 W power modes.
-2. Detection mAP before and after INT8 quantisation, with the calibration set documented.
+1. Latency per stage and joules per frame at 7 W, 15 W and 25 W power modes, on the Jetson (including FP16 vs. INT8).
+2. Detection mAP after INT8 on the device build, and with other calibration methods.
 3. Tracking MOTA/HOTA on recorded sequences, and track continuity under dropped frames.
 4. Tracks delivered per kilobyte at simulated 9.6 kbps, 64 kbps and 1 Mbps.
 5. A 24-hour soak test.

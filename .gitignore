@@ -10,3 +10,8 @@ dist/
 *.engine
 *.pt
 data/
+.venv-gpu/
+runs/
+weights/
+datasets/
+experiments/detector/out/
