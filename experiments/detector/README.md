@@ -2,7 +2,7 @@
 
 How much accuracy does quantisation cost a small aerial detector, and how much latency does it buy? This runs on a desktop NVIDIA GPU, so it needs no Jetson. It measures the **accuracy** cost of INT8, which indicates what to expect on the Jetson but does not guarantee it: the engines are rebuilt there with a different TensorRT version and may quantise differently. It does not measure Jetson latency or power (milestone 0.4).
 
-**Status: results for the seed-0 model, calibration study and latency re-measurement are in; two extra training seeds are still running.** Everything is from a desktop GPU and is not a Jetson number. An earlier version of this page reported INT8 as slower than FP16; that was wrong, see the correction below.
+**Status: milestone 0.3b complete.** Results for three training seeds, a calibration study and a latency re-measurement are in. Everything is from a desktop GPU and is not a Jetson number. An earlier version of this page reported INT8 as slower than FP16; that was wrong, see the correction below.
 
 ## Method
 
@@ -72,16 +72,27 @@ MinMax: mean -0.79 pts, std 0.04 over the three samples. Entropy: mean -2.96 pts
 ### What this shows
 
 - **FP16 is free here:** same accuracy to within noise.
-- **INT8 with MinMax calibration costs about 0.8-0.9 mAP50-95 points (about 5%)** and is stable across calibration samples; in return it is about 8% faster than FP16 at batch 1 and about 27% faster at batch 8 on this GPU. A modest return at batch 1.
-- **Entropy calibration was worse on this model:** about 3 points lost, with much more variation between calibration samples, and no faster than FP16 at batch 8. I did not investigate why; the measurement is what it is.
+- **INT8 with MinMax calibration costs about 0.9 mAP50-95 points (-0.88 ± 0.07 over three trained models, about 5%)** and is stable across calibration samples and training seeds; in return it is about 8% faster than FP16 at batch 1 and about 27% faster at batch 8 on this GPU. A modest return at batch 1.
+- **Entropy calibration was worse on this model family:** about 3 points lost in every trained model, with more variation between calibration samples, and no faster than FP16 at batch 8. I did not investigate why; the measurement is what it is.
 - **The earlier hypothesis that INT8 is launch-bound at batch 1 is not needed:** INT8 is faster, just by little at batch 1, and the gap grows with batch size, which is what a partly launch- or memory-bound small model would show. I have not profiled it.
 - **For the Jetson:** measure FP16 and INT8 on the device with clocks fixed, repeat and interleave the measurements, and decide on joules per frame, not latency alone.
 
-Training-seed results (two more fine-tunes) are running and will be added here.
+### Across training seeds
+
+The same recipe was run with training seeds 0, 1 and 2 (30 epochs each), each evaluated across precisions. Seeds 1 and 2 used calibration sample 0 and the improved multi-round latency method. Entropy calibration for seed 0 is covered by the calibration study above (-4.19, -2.30, -2.39 over three samples), so it is not in this table.
+
+| Training seed | FP32 mAP50-95 | FP16 Δ (pts) | INT8 MinMax Δ (pts) | INT8 Entropy Δ (pts) |
+| --- | --- | --- | --- | --- |
+| 0 | 0.1617 | +0.05 | -0.92 | see calibration study |
+| 1 | 0.1633 | +0.16 | -0.92 | -3.13 |
+| 2 | 0.1623 | +0.12 | -0.80 | -3.06 |
+| **mean ± std** | 0.1624 ± 0.0008 | +0.11 ± 0.05 (n=3) | **-0.88 ± 0.07 (n=3)** | about -3.0 (five builds: -4.19, -2.30, -2.39, -3.13, -3.06) |
+
+The INT8 accuracy loss reproduces across independently trained models: about 0.9 mAP50-95 points (about 5% relative) for MinMax calibration and about 3 points for entropy calibration. FP16 is neutral to slightly positive (+0.11 points, a size consistent with noise). Batch-1 latencies in the seed 1 and 2 evaluation runs (FP16 1.03 and 1.29 ms, INT8 MinMax 0.99 and 0.96 ms, Entropy 0.92 ms for both) point the same way as the seed-0 study, but those runs were not interleaved and the 1.29 ms FP16 figure looks like throttling noise, so no claim rests on them.
 
 ## Limitations of these results
 
-- One trained model (seed 0) for the calibration and latency studies; the other training seeds are pending. Mean-and-spread figures above are over calibration samples, not over trained models.
+- Three training seeds is a small sample, and the entropy figures are five builds that are not independent (two share a calibration sample, three share a model). The calibration and latency studies use the seed-0 model only. Standard deviations here describe spread, not confidence intervals.
 - Latency is from a laptop GPU that throttles. Absolute values drift by about 15% during a run; only same-round comparisons are trusted. Latency is model inference only, on a random-noise image, and is not Jetson latency.
 - The MinMax and Entropy comparison uses Ultralytics' mixed-precision graph (the head's final Sigmoid is kept in higher precision), which is a specific choice. Other calibrators, such as percentile, were not tried because Ultralytics does not expose them for this TensorRT path.
 - Build-to-build variation (about 0.14 points for the same inputs) is of the same order as the differences between the three MinMax samples, so the small differences among those rows should not be read as meaningful.

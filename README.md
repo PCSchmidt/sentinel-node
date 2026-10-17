@@ -33,7 +33,7 @@ YOLO11n fine-tuned on VisDrone (aerial people and vehicles), 640 px, evaluated o
 | TensorRT FP16 | 0.162 | +0.05 pts | 1.12 | 8.1 |
 | TensorRT INT8 (MinMax) | 0.152 | -0.92 pts (-5.7%) | 1.07 | 4.9 |
 
-FP16 cost nothing in accuracy. MinMax INT8 lost about 0.8-0.9 points of mAP50-95 (stable across three calibration samples) and ran about 8% faster than FP16 at batch 1 and about 27% faster at batch 8; entropy calibration lost about 3 points. An earlier version of this page said INT8 was slower than FP16; that came from a single outlier latency reading and did not reproduce (details and correction in the experiment README). Latency on this throttling laptop GPU drifts, so engines are compared within the same measurement round. Not Jetson numbers; two more training seeds are still running. See [experiments/detector](experiments/detector/README.md).
+FP16 cost nothing in accuracy (+0.11 ± 0.05 points over three trained models). MinMax INT8 lost 0.88 ± 0.07 points of mAP50-95 (stable across three training seeds and three calibration samples) and ran about 8% faster than FP16 at batch 1 and about 27% faster at batch 8 on the seed-0 model; entropy calibration lost about 3 points. An earlier version of this page said INT8 was slower than FP16; that came from a single outlier latency reading and did not reproduce (details and correction in the experiment README). Latency on this throttling laptop GPU drifts, so engines are compared within the same measurement round. Not Jetson numbers. See [experiments/detector](experiments/detector/README.md).
 
 ## Planned measurements (not yet done)
 

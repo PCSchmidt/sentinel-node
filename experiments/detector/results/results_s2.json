@@ -1,0 +1,43 @@
+{
+  "meta": {
+    "gpu": "NVIDIA RTX A4500 Laptop GPU",
+    "torch": "2.11.0+cu128",
+    "tensorrt": "10.16.1.11",
+    "ultralytics": "8.4.178",
+    "imgsz": 640,
+    "weights": "C:\\Dev\\AIEdgePhysicalProjects\\sentinel-node\\experiments\\detector\\out\\runs\\visdrone_s2\\weights\\best.pt",
+    "latency": "median of 3 rounds, each the median of 300 single-image predictions after 30 warm-up runs, model inference only, batch 1",
+    "dataset": "C:\\Dev\\AIEdgePhysicalProjects\\sentinel-node\\experiments\\detector\\out\\visdrone_local.yaml",
+    "int8_calibration": "Ultralytics EngineCalibrator; images from calib.yaml (held-out training sample); MinMax unless labelled Entropy"
+  },
+  "results": [
+    {
+      "name": "PyTorch FP32",
+      "map50": 0.2892796994880386,
+      "map50_95": 0.16231758827985854,
+      "latency_ms": 6.849350000265986,
+      "size_mb": 5.232629776000977
+    },
+    {
+      "name": "TensorRT FP16",
+      "map50": 0.29078122364493697,
+      "map50_95": 0.16347190144865986,
+      "latency_ms": 1.2909999932162464,
+      "size_mb": 8.230401992797852
+    },
+    {
+      "name": "TensorRT INT8 (MinMax)",
+      "map50": 0.27791481964890535,
+      "map50_95": 0.15427198804012016,
+      "latency_ms": 0.9619999909773469,
+      "size_mb": 4.889781951904297
+    },
+    {
+      "name": "TensorRT INT8 (Entropy)",
+      "map50": 0.23807610574313057,
+      "map50_95": 0.13169017876852845,
+      "latency_ms": 0.9156000160146505,
+      "size_mb": 4.925441741943359
+    }
+  ]
+}
