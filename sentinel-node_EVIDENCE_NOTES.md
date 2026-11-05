@@ -135,3 +135,26 @@ Archived the first draft as sentinel-node.v1draft.md and applied the ten reader-
 8. Terms defined inline; the glossary was removed, per the form rule against glossary boxes.
 9. "AI coding agents wrote the code" is stated once in the opening and once by reference in the build chapter; the Q&A repeat was dropped. "My target titles" now states the roles from the author context (AI engineer, forward-deployed AI engineer, applied AI/ML engineer). "Questions file" references removed. No tool is named as builder.
 10. Testing and results trimmed to headline figures; noise-floor, interleaved-round and spread detail reduced to plain sentences. The "no customer" row of the recruiter table was merged into the text. The numbers in the guide match the saved result files.
+
+## Author answers folded in, 2026-11-05
+
+Source: the answers appended to the 18 questions in sentinel-node.questions.md. Label: Author says. Repo clone re-pulled; already up to date.
+
+- Q1: Author says he started the project to build physical-AI and edge-AI projects for personal learning goals. Added to the status paragraph.
+- Q2: Confirmed that defense-style edge sensing is a field that interests him. The existing single sentence is unchanged.
+- Q3: Author says YOLO11n and VisDrone followed recommendations. Guide says he followed the AI coding agents' recommendation; no further source named.
+- Q4: Author says putting the laptop-GPU experiment ahead of the Jetson work was a recommendation. Guide says so.
+- Q5: Author says he does not yet own a Jetson Orin Nano and camera. Added.
+- Q6: Author says nobody else has run, read or commented. Added.
+- Q7: Tool and model named in his answer; names kept in the questions file only. Guide and evidence say only "AI coding agents".
+- Q8: Unsure. Guide wording now "unsure what I decided beyond the README and roadmap"; the claim that he directed plan and architecture was removed. The calibration-on-training-images choice and the INT8 correction are described as repository facts, not as his decisions.
+- Q9: Author says he used the same window between sessions. Consistent with the repo (no instruction files); guide says he carried context by staying in one long working session.
+- Q10: Unsure. Nothing added.
+- Q11: Some parts of all (quantisation and calibration, governor headroom and hysteresis, CoT format). Added.
+- Q12: Cannot explain unaided why INT8 lost accuracy or why entropy calibration did worse. Stated plainly, no blame.
+- Q13: Not finished; wants the recommended milestones; time not stated. Added.
+- Q14: Probably wants the governor wired in and the trained detector in the harness before hardware work. Stated as "probably", not a decision.
+- Q15: Licence note undecided; defers to recommendation. Guide says so.
+- Q16: Fine; sentence kept.
+- Q17: Unsure why the FP16 engine file is larger than the FP32 file. Guide keeps it unexplained.
+- Q18: Confirmed laptop GPU (RTX A4500 Laptop GPU). Finding: the README's word "desktop" is wrong. Stated in the guide results chapter.

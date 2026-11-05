@@ -2,7 +2,7 @@
 
 *A starting kit for a small, cheap sensor that would spot people, vehicles and drones on its own and radio back short position messages instead of video; so far a laptop test rig plus one measured experiment on a detection model.*
 
-Status: early scaffold with one measured result, last changed 16 October 2026. Code: https://github.com/PCSchmidt/sentinel-node (public, MIT (Massachusetts Institute of Technology) licence, a permissive open-source licence). It has no stars, no copies made by others and no outside users that I can show. Nothing has run on the intended hardware.
+Status: early scaffold with one measured result, last changed 16 October 2026. Code: https://github.com/PCSchmidt/sentinel-node (public, MIT (Massachusetts Institute of Technology) licence, a permissive open-source licence). It has no stars, no copies made by others and no outside users. Nobody else has run, read or commented on it. I started it to build physical-AI and edge-AI projects for personal learning goals, and I do not yet own the intended hardware (a Jetson Orin Nano and a camera), so nothing has run on it.
 
 Picture a small battery-powered box on a post at the edge of a field, with a camera, a weak radio link and nobody watching a screen. Sending live video over that link is impossible, so the box has to work out locally what it sees and send only a short note: "something moving at this spot, heading east at 14 metres a second." That is the device this project is working toward. What exists today is a test rig (engineers call it a harness: code that exercises the parts and times them) that runs on a laptop, plus one experiment on the part that would find objects in pictures. The experiment asks how much accuracy a detection model loses when it is shrunk so that it runs faster on small hardware.
 
@@ -10,7 +10,7 @@ Here is what is fixed and what is learned. A calculator always gives the same ou
 
 ![Which pieces are fixed rules, which are stand-ins and which is learned](images/sentinel-node-learned-vs-rules.png)
 
-The key result is narrow. The detector gets a score of 0.162 on a scale from 0 (finds nothing) to 1 (perfect), which is low, though the project does not say how that compares with other models on this data. On a laptop graphics card (a GPU (graphics processing unit), a chip built for heavy number-crunching), storing the model's numbers as INT8 (8-bit whole numbers, only 256 possible values) lowered that score by about 0.009, roughly 5%. It also ran 8% to 27% faster than the same model stored as FP16 (16-bit decimal numbers, half the detail of the original FP32, 32-bit), depending on how many images were processed together. These are not numbers from the small device the box is meant to use, so they indicate what to expect and nothing more. AI coding agents wrote almost all of the code, and I directed the scope, plan, architecture and preferences.
+The key result is narrow. The detector gets a score of 0.162 on a scale from 0 (finds nothing) to 1 (perfect), which is low, though the project does not say how that compares with other models on this data. On a laptop graphics card (a GPU (graphics processing unit), a chip built for heavy number-crunching), storing the model's numbers as INT8 (8-bit whole numbers, only 256 possible values) lowered that score by about 0.009, roughly 5%. It also ran 8% to 27% faster than the same model stored as FP16 (16-bit decimal numbers, half the detail of the original FP32, 32-bit), depending on how many images were processed together. These are not numbers from the small device the box is meant to use, so they indicate what to expect and nothing more. AI coding agents wrote almost all of the code.
 
 If you have ten minutes, read this opening, then the chapters on what it does, the results, and the one for recruiters and interviewers.
 
@@ -42,7 +42,7 @@ In short, it turns fake detections into tiny messages and times each step, and a
 
 The parts have one job each: the source supplies frames, the detector finds things, the tracker follows them, the publisher writes messages, the governor picks a sending level and the timers record how long each step takes. The design notes draw the governor between tracker and publisher, but the code does not call it, so the notes show the plan, not what runs.
 
-The test rig uses made-up dots, so there is no real data to clean. The experiment uses VisDrone, a public collection of pictures taken from drones, with boxes drawn around classes that include pedestrians, cars, vans, trucks, buses and motorbikes. A script downloads it (about 2 GB) and it is not stored in the repository. Its licence terms are not stated there. The pictures show aerial people and vehicles, not small drones flying in the air, which is what the sensor is meant to spot; no drone-specific dataset has been chosen.
+The test rig uses made-up dots, so there is no real data to clean. The experiment uses VisDrone, a public collection of pictures taken from drones, with boxes drawn around classes that include pedestrians, cars, vans, trucks, buses and motorbikes. A script downloads it (about 2 GB) and it is not stored in the repository. Its licence terms are not stated there, and the same holds for the pretrained weights. The pictures show aerial people and vehicles, not small drones flying in the air, which is what the sensor is meant to spot; no drone-specific dataset has been chosen.
 
 The tools are few. The test rig uses only Python's standard library and a test runner. The experiment adds PyTorch (a widely used toolkit for neural networks), Ultralytics (the library that publishes the YOLO detectors, used here for training and exporting) and TensorRT (NVIDIA's software that compiles a trained network into a faster version for its own chips). The weak link is the gap between what exists and the target: the real work, on the device, has not begun.
 
@@ -60,7 +60,7 @@ In short, the useful part is measuring each speed-up together with its cost, in 
 
 ## The detection model and what it gets wrong
 
-The one model is YOLO11n, the detector introduced in the opening: a neural network that looks at a whole picture once and returns boxes with labels and confidence scores. The "n" means nano, the smallest size. It takes in a 640 by 640 pixel image and gives back boxes for the VisDrone classes. It started from weights (the numbers the network learned) trained on COCO (Common Objects in Context), a general collection of everyday photos, and was fine-tuned, meaning trained further on VisDrone, for 30 epochs (passes over the training pictures). That took about 52 minutes on the laptop. The repository does not say why this model was chosen, and no comparison with other detectors was run.
+The one model is YOLO11n, the detector introduced in the opening: a neural network that looks at a whole picture once and returns boxes with labels and confidence scores. The "n" means nano, the smallest size. It takes in a 640 by 640 pixel image and gives back boxes for the VisDrone classes. It started from weights (the numbers the network learned) trained on COCO (Common Objects in Context), a general collection of everyday photos, and was fine-tuned, meaning trained further on VisDrone, for 30 epochs (passes over the training pictures). That took about 52 minutes on the laptop. I followed the AI coding agents' recommendation for YOLO11n and for VisDrone; the repository records no reasons, and no comparison with other detectors was run.
 
 Three versions matter: the original, a TensorRT FP16 engine and a TensorRT INT8 engine. An "engine" is TensorRT's word for the compiled version of the network, tied to one graphics chip. The INT8 engine keeps the final confidence step in higher precision, which the experiment's notes say is how the library builds it. Engines do not move between machines, so the Jetson would need new ones.
 
@@ -86,7 +86,9 @@ The experiment fine-tuned the model and compared three versions on the validatio
 | TensorRT FP16 | 0.162 | +0.001 | 1.12 ms | 8.1 MB |
 | TensorRT INT8 (MinMax) | 0.152 | -0.009 (about 6% lower) | 1.07 ms | 4.9 MB |
 
-The times are the median of five rounds on a laptop RTX A4500 graphics card, for one image at a time, using TensorRT 10.16 and a random-noise picture so that only the model's own time counts (ms is a thousandth of a second). The FP16 file is larger than the FP32 one, which is surprising, since FP16 stores half the detail. The repository gives no reason, so I will not guess.
+The times are the median of five rounds on a laptop RTX A4500 graphics card, for one image at a time, using TensorRT 10.16 and a random-noise picture so that only the model's own time counts (ms is a thousandth of a second). The FP16 file is larger than the FP32 one, which is surprising, since FP16 stores half the detail. The repository gives no reason and I do not know it, so I will not guess.
+
+The README calls this card a "desktop" GPU, which is wrong: the saved result files say RTX A4500 Laptop GPU, and I confirmed it is a laptop.
 
 ![Accuracy change and relative speed for FP16, INT8 MinMax and INT8 Entropy](images/sentinel-node-results.png)
 
@@ -98,21 +100,21 @@ In short, on this card INT8 buys a modest speed-up for a small accuracy loss, an
 
 ## Could it be put into real use?
 
-No. On the scale of experiment, works on a laptop, deployable, and operated, the test rig sits at works on a laptop (it runs and passes its tests, but does nothing real) and the detector work sits at experiment. Nothing is hosted and no outside user is known. A real deployment would need the device, a camera, a tracker, network sending, power measurement, monitoring and a security review. Three steps would help most: build the engines on a Jetson and time them with real power readings; wire the governor into the run and add network sending; and put the trained detector into the rig so the timing table has a real detection row. As a showcase it rates "possible", because it measures a trade-off with repeats, not because it is a working system.
+No. On the scale of experiment, works on a laptop, deployable, and operated, the test rig sits at works on a laptop (it runs and passes its tests, but does nothing real) and the detector work sits at experiment. Nothing is hosted and no outside user is known. The project is not finished. I probably want the governor wired into the run and the trained detector put into the test rig before any hardware work; that is a leaning, not a decision, and I have not stated how much time I can give. I want the recommended roadmap milestones. A real deployment would need the device, a camera, a tracker, network sending, power measurement, monitoring and a security review. Three steps would help most: build the engines on a Jetson and time them with real power readings; wire the governor into the run and add network sending; and put the trained detector into the rig so the timing table has a real detection row. As a showcase it rates "possible", because it measures a trade-off with repeats, not because it is a working system.
 
 ## Strengths, shortcomings and the work still to do
 
-The calibration uses training pictures, not scoring pictures, so answers do not leak into the test. Runs are repeated across three training seeds and the spread is reported. The project corrected its own wrong claim in public and kept the first-pass numbers in a saved file, and its README says plainly what has not been done.
+The repository's calibration uses training pictures, not scoring pictures, so answers do not leak into the test. Runs are repeated across three training seeds and the spread is reported. The project corrected its own wrong claim in public and kept the first-pass numbers in a saved file, and its README says plainly what has not been done.
 
 Three shortcomings matter most. The detection model is not in the test rig, so no end-to-end result exists. The design notes have drifted: they still call the dataset undecided and draw the governor in the flow. And the message has not been checked in a real mapping app. The roadmap lists the rest as planned, including camera capture, on-device delay and energy, a real tracker and link tests at slow speeds.
 
 ## How it was built, and who did what
 
-AI coding agents wrote almost all of the code, as stated at the top. All five commits, made on 16 October 2026, carry an AI co-author credit, and the repository has no instruction files for the agents. The work was checked by tests, the experiment's repeats and an in-repo correction of an early wrong claim. What I decided beyond the scope statement in the README is not written down in the repository.
+AI coding agents wrote almost all of the code, as stated at the top. All five commits, made on 16 October 2026, carry an AI co-author credit, and the repository has no instruction files for the agents. The work was checked by tests, the experiment's repeats and an in-repo correction of an early wrong claim. I am unsure what I decided beyond the README and roadmap, and the repository does not record it. There are no instruction files, and I carried context by staying in one long working session. Followed recommendations: YOLO11n with VisDrone, and doing the laptop-GPU experiment before the Jetson work. I cannot yet explain unaided why INT8 lost accuracy or why entropy calibration did worse, and I understand some parts of all of quantisation and calibration, the governor's headroom and hysteresis, and the CoT format only partly.
 
 ## For recruiters and interviewers
 
-In thirty seconds: I directed AI coding agents to build a test rig for a small edge sensor and an experiment measuring what shrinking a detection model to 8 bits costs in accuracy and gains in speed, repeated across training runs and reported with its own correction. In two minutes, add that nothing has run on the target hardware and that the model is not yet in the test rig.
+In thirty seconds: AI coding agents built a test rig for a small edge sensor and an experiment measuring what shrinking a detection model to 8 bits costs in accuracy and gains in speed, repeated across training runs and reported with its own correction. In two minutes, add that nothing has run on the target hardware and that the model is not yet in the test rig.
 
 | Typical requirement | What the project shows | Strength |
 | --- | --- | --- |
@@ -121,7 +123,7 @@ In thirty seconds: I directed AI coding agents to build a test rig for a small e
 | Software practice | 42 passing tests, CI on two Python versions | Partly |
 | Deploying and operating | Nothing hosted, no device runs | Not shown |
 
-The roles I am aiming at are AI engineer, forward-deployed AI engineer (an engineer placed with a customer) and applied AI or machine-learning engineer. The AI engineer role fits best, as a partial fit, because of the quantisation and measurement work; the forward-deployed role fits least, since nothing was built for a customer. What not to claim: that anything runs on a Jetson, that the rig's timings describe a real node, or that this tracks small drones.
+The roles I am aiming at are AI engineer, forward-deployed AI engineer (an engineer placed with a customer) and applied AI or machine-learning engineer. The AI engineer role fits best, as a partial fit, because of the quantisation and measurement work; the forward-deployed role fits least, since nothing was built for a customer. The licence note for the dataset and weights is undecided; I defer to the recommendation. What not to claim: that anything runs on a Jetson, that the rig's timings describe a real node, or that this tracks small drones.
 
 Questions I would expect:
 
